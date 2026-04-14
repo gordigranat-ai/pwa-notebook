@@ -1,1 +1,1 @@
-# pwa-notebook
+# pwa-workshop

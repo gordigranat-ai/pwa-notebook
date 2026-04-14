@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#fbf7f0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="description" content="PWA Заметки • Офлайн • Push • WebSocket">
+    
+    <title>Ежедневник</title>
+    
+    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/images/icon-192.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Neucha&family=PT+Mono&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="paper-texture"></div>
+    
+    <div class="notebook">
+        
+        <!-- Переплёт / корешок -->
+        <div class="spine"></div>
+        
+        <!-- Левая страница -->
+        <div class="page page-left">
+            <div class="page-content">
+                
+                <!-- Дата и время -->
+                <div class="dateline">
+                    <span class="day" id="currentDay">Понедельник</span>
+                    <span class="date" id="currentDate">14 апреля</span>
+                    <span class="time" id="currentTime">14:30</span>
+                </div>
+                
+                <!-- Новая запись -->
+                <div class="section-title">
+                    <span class="section-icon">✎</span>
+                    Новая запись
+                </div>
+                
+                <div class="writing-area">
+                    <input type="text" id="noteTitle" class="handwritten-input" placeholder="Заголовок...">
+                    <div class="paper-lines">
+                        <textarea id="noteContent" class="handwritten-textarea" placeholder="Пиши здесь..." rows="5"></textarea>
+                    </div>
+                    <button id="addNoteBtn" class="btn btn--ink">
+                        <span>↧</span> В ежедневник
+                    </button>
+                </div>
+                
+                <!-- Инструменты (скрепка) -->
+                <div class="paperclip-section">
+                    <div class="paperclip"></div>
+                    <div class="tool-buttons">
+                        <button id="fetchDataBtn" class="tool-btn" title="Загрузить данные">📡</button>
+                        <button id="clearCacheBtn" class="tool-btn tool-btn--danger" title="Очистить кеш">🗑️</button>
+                        <button id="testOfflineBtn" class="tool-btn tool-btn--warning" title="Офлайн-режим">📴</button>
+                        <button id="refreshBtn" class="tool-btn" title="Обновить">↻</button>
+                    </div>
+                </div>
+                
+                <!-- Статус (как пометки на полях) -->
+                <div class="margin-notes">
+                    <div class="margin-note">
+                        <span class="margin-note__label">Сеть</span>
+                        <span class="margin-note__value" id="connectionText">онлайн</span>
+                        <span class="margin-note__dot" id="connIndicator"></span>
+                    </div>
+                    <div class="margin-note">
+                        <span class="margin-note__label">SW</span>
+                        <span class="margin-note__value" id="swText">--</span>
+                    </div>
+                    <div class="margin-note">
+                        <span class="margin-note__label">Кеш</span>
+                        <span class="margin-note__value" id="cacheInfo">--</span>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Номер страницы -->
+            <div class="page-number">— 1 —</div>
+        </div>
+        
+        <!-- Правая страница -->
+        <div class="page page-right">
+            <div class="page-content">
+                
+                <!-- Заголовок страницы -->
+                <div class="section-title">
+                    <span class="section-icon">📋</span>
+                    Мои записи
+                    <span class="record-count" id="notesCounter">0</span>
+                </div>
+                
+                <!-- Список записей -->
+                <div id="notesList" class="records-list">
+                    <div class="empty-record">
+                        <span class="empty-icon">📭</span>
+                        <p>Пока пусто...</p>
+                        <p class="handwritten-hint">напиши что-нибудь слева</p>
+                    </div>
+                </div>
+                
+                <!-- Разделитель -->
+                <div class="divider">✽ ✽ ✽</div>
+                
+                <!-- Подключения (как заметки на полях) -->
+                <div class="connections-notes">
+                    
+                    <!-- WebSocket -->
+                    <div class="connection-note">
+                        <div class="connection-note__header">
+                            <span class="connection-note__title">WebSocket</span>
+                            <span class="connection-note__status">
+                                <span class="ink-dot" id="wsDot"></span>
+                                <span id="wsStatusText">отключен</span>
+                            </span>
+                        </div>
+                        <div class="connection-note__actions connection-note__actions--wrap">
+                            <button id="wsConnectBtn" class="mini-btn">подкл</button>
+                            <button id="wsDisconnectBtn" class="mini-btn mini-btn--danger" disabled>откл</button>
+                            <button id="wsSendBtn" class="mini-btn" disabled>ping</button>
+                        </div>
+                        <div id="wsOutput" class="ink-log">
+                            <div class="ink-log__line ink-log__line--muted">// журнал</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Push -->
+                    <div class="connection-note">
+                        <div class="connection-note__header">
+                            <span class="connection-note__title">Push</span>
+                            <span class="connection-note__status">
+                                <span class="ink-dot" id="pushDot"></span>
+                                <span id="pushStatusText">не подписан</span>
+                            </span>
+                        </div>
+                        <div class="connection-note__actions connection-note__actions--wrap">
+                            <button id="subscribeBtn" class="mini-btn" disabled>подписаться</button>
+                            <button id="unsubscribeBtn" class="mini-btn" disabled>отписаться</button>
+                        </div>
+                        <button id="sendTestPushBtn" class="mini-btn mini-btn--full" disabled style="margin-top: 6px;">
+                            отправить тест
+                        </button>
+                        <div id="subscriptionIdDisplay" class="id-scribble"></div>
+                    </div>
+                    
+                </div>
+                
+                <!-- Статистика (внизу страницы) -->
+                <div class="footer-stats">
+                    <button id="refreshStatsBtn" class="refresh-stats-btn">↻ статистика</button>
+                    <div id="statsOutput" class="stats-scribble">
+                        <span class="stats-scribble__placeholder">нажми ↻</span>
+                    </div>
+                </div>
+                
+                <!-- Информация о PWA -->
+                <div class="pwa-badge">
+                    <span id="displayModeBadge">Веб</span>
+                    <button id="installBtn" class="install-link" style="display: none;">[ установить ]</button>
+                </div>
+                
+            </div>
+            
+            <!-- Номер страницы -->
+            <div class="page-number">— 2 —</div>
+        </div>
+        
+        <!-- Закладка -->
+        <div class="bookmark"></div>
+        
+    </div>
+    
+    <!-- Офлайн индикатор (стикер) -->
+    <div id="offlineIndicator" class="sticker sticker--error" style="display: none;">
+        <span>📴</span>
+        <span>офлайн</span>
+    </div>
+    
+    <!-- Лог операций (выдвижной ящик) -->
+    <div id="dataOutput" class="drawer" style="display: none;">
+        <div class="drawer__header">
+            <span>Лог операций</span>
+            <button class="drawer__close" id="closeDrawerBtn">✕</button>
+        </div>
+        <div class="drawer__content" id="drawerContent">
+            <div class="ink-log__line ink-log__line--muted">// готов к работе</div>
+        </div>
+    </div>
+    
+    <script src="/app.js"></script>
+</body>
+</html>
