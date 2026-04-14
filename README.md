@@ -28,11 +28,11 @@ npm run prod
 npm run prod:linux
 
 ##📁 Структура
-├── server.js          # Express + WebSocket + Push
-├── public/
-│   ├── index.html     # Главная страница
-│   ├── style.css      # Стили
-│   ├── app.js         # Клиент
-│   ├── sw.js          # Service Worker
-│   └── manifest.json  # PWA манифест
-└── package.json
+├── server.js          # Express + WebSocket + Push <br>
+├── public/ <br>
+│   ├── index.html     # Главная страница <br>
+│   ├── style.css      # Стили <br>
+│   ├── app.js         # Клиент <br>
+│   ├── sw.js          # Service Worker <br>
+│   └── manifest.json  # PWA манифест <br>
+└── package.json <br>
